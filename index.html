@@ -1161,6 +1161,7 @@ function createWheel(wheelData, finishIndex) {
 }
 
 function createWheelsOnCar(wheelData) {
+  if (!carGroup) return;
   // Remove old wheels
   wheelGroups.forEach(w => {
     carGroup.remove(w);
@@ -1187,6 +1188,7 @@ function createWheelsOnCar(wheelData) {
 }
 
 function swapWheels(index, finishIndex) {
+  if (!carGroup) return;
   const wheelData = WHEEL_CATALOG[index];
   if (finishIndex !== undefined) wheelData.currentFinish = finishIndex;
 
@@ -1395,8 +1397,6 @@ try {
       <p style="margin:16px 0 8px;font-size:18px;color:#ccc;">WebGL Required</p>
       <p style="font-size:13px;max-width:400px;">This 3D visualizer requires WebGL support. Please open this page in a modern browser with hardware acceleration enabled.</p>
     </div>`;
-  // Still init UI so the wheel selector works
-  initUI();
 }
 </script>
 
