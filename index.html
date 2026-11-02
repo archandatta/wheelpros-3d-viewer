@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WheelPros 3D Visualizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a0a0f;
+    color: #e0e0e0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #canvas-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  canvas { display: block; width: 100%; height: 100%; }
+
+  /* Header */
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 32px;
+    background: linear-gradient(to bottom, rgba(10,10,15,0.9) 0%, rgba(10,10,15,0) 100%);
+    pointer-events: none;
+  }
+
+  #header > * { pointer-events: auto; }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  .logo span { color: #c8a84e; }
+
+  .vehicle-info {
+    font-size: 13px;
+    font-weight: 400;
+    color: #888;
+    text-align: right;
+  }
+
+  .vehicle-info strong {
+    color: #ccc;
+    font-weight: 600;
+  }
+
+  /* Controls hint */
+  #controls-hint {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1px;
+    pointer-events: none;
+    transition: opacity 1.5s ease;
+  }
+
+  #controls-hint.hidden { opacity: 0; }
+
+  /* Wheel info panel */
+  #wheel-info {
+    position: fixed;
+    top: 50%;
+    right: 32px;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 260px;
+    background: rgba(15,15,22,0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(200,168,78,0.15);
+    border-radius: 16px;
+    padding: 28px 24px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  #wheel-info .brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #c8a84e;
+    margin-bottom: 4px;
+  }
+
+  #wheel-info .name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+
+  #wheel-info .specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  #wheel-info .spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  #wheel-info .spec-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #666;
+  }
+
+  #wheel-info .spec-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ccc;
+  }
+
+  #wheel-info .price {
+    font-size: 32px;
+    font-weight: 300;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  #wheel-info .price sup {
+    font-size: 16px;
+    vertical-align: super;
+    margin-right: 2px;
+  }
+
+  /* Finish selector dots */
+  .finish-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .finish-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .finish-dot:hover { transform: scale(1.15); }
+
+  .finish-dot.active {
+    border-color: #c8a84e;
+    box-shadow: 0 0 12px rgba(200,168,78,0.3);
+  }
+
+  .finish-name {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 20px;
+  }
+
+  .cta-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #c8a84e, #a08030);
+    color: #000;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cta-btn:hover {
+    background: linear-gradient(135deg, #d4b85e, #b09040);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(200,168,78,0.3);
+  }
+
+  /* Bottom wheel selector */
+  #wheel-selector {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 10;
+    padding: 16px 32px 24px;
+    background: linear-gradient(to top, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0) 100%);
+  }
+
+  .selector-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .wheel-cards {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .wheel-cards::-webkit-scrollbar { display: none; }
+
+  .wheel-card {
+    flex-shrink: 0;
+    width: 140px;
+    padding: 16px 14px;
+    background: rgba(25,25,35,0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: center;
+  }
+
+  .wheel-card:hover {
+    border-color: rgba(200,168,78,0.3);
+    transform: translateY(-4px);
+    background: rgba(30,30,42,0.9);
+  }
+
+  .wheel-card.active {
+    border-color: #c8a84e;
+    background: rgba(200,168,78,0.08);
+    box-shadow: 0 0 24px rgba(200,168,78,0.1);
+  }
+
+  .wheel-card .card-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .wheel-card .card-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .wheel-card .card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+
+  .wheel-card .card-brand {
+    font-size: 10px;
+    font-weight: 500;
+    color: #888;
+    letter-spacing: 0.5px;
+  }
+
+  /* Car color selector */
+  #color-selector {
+    position: fixed;
+    left: 32px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .color-dot:hover { transform: scale(1.2); }
+  .color-dot.active { border-color: #fff; }
+
+  /* Auto-rotate toggle */
+  #auto-rotate {
+    position: fixed;
+    bottom: 140px;
+    right: 32px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(25,25,35,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #888;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+
+  #auto-rotate:hover { color: #ccc; border-color: rgba(255,255,255,0.12); }
+  #auto-rotate.active { color: #c8a84e; border-color: rgba(200,168,78,0.3); }
+
+  .rotate-icon {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    transition: transform 0.3s ease;
+  }
+
+  #auto-rotate.active .rotate-icon {
+    animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Loading */
+  #loading {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    background: #0a0a0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity 0.8s ease;
+  }
+
+  #loading.done { opacity: 0; pointer-events: none; }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(200,168,78,0.2);
+    border-top-color: #c8a84e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .loading-text {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #666;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    #wheel-info { display: none; }
+    #color-selector { left: 16px; }
+    #header { padding: 16px; }
+    #wheel-selector { padding: 12px 16px 20px; }
+    .wheel-card { width: 120px; padding: 12px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading Visualizer</div>
+</div>
+
+<div id="canvas-container"></div>
+
+<div id="header">
+  <div class="logo">Wheel<span>Pros</span> <span style="font-weight:300;font-size:13px;letter-spacing:1px;color:#666;">3D VISUALIZER</span></div>
+  <div class="vehicle-info">
+    <strong>2016 Toyota Corolla LE</strong><br>
+    Bolt Pattern: 5x114.3 &middot; Hub Bore: 60.1mm
+  </div>
+</div>
+
+<div id="controls-hint">Drag to rotate &middot; Scroll to zoom</div>
+
+<div id="wheel-info">
+  <div class="brand" id="info-brand">BLACK RHINO</div>
+  <div class="name" id="info-name">ARX</div>
+  <div class="specs">
+    <div class="spec-item">
+      <span class="spec-label">Size</span>
+      <span class="spec-value" id="info-size">17x8</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Bolt</span>
+      <span class="spec-value" id="info-bolt">5x114.3</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Offset</span>
+      <span class="spec-value" id="info-offset">+32mm</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Weight</span>
+      <span class="spec-value" id="info-weight">24.5 lbs</span>
+    </div>
+  </div>
+  <div class="finish-selector" id="finish-selector"></div>
+  <div class="finish-name" id="finish-name">Gun Black / Matte Black Ring</div>
+  <div class="price"><sup>$</sup><span id="info-price">455</span></div>
+  <button class="cta-btn">Configure &amp; Buy</button>
+</div>
+
+<div id="color-selector"></div>
+
+<div id="auto-rotate" class="active" onclick="toggleAutoRotate()">
+  <div class="rotate-icon"></div>
+  <span>Auto Rotate</span>
+</div>
+
+<div id="wheel-selector">
+  <div class="selector-label">Select Wheels</div>
+  <div class="wheel-cards" id="wheel-cards"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ============================================================
+//  WHEEL CATALOG
+// ============================================================
+const WHEEL_CATALOG = [
+  {
+    id: 'arx',
+    name: 'ARX',
+    brand: 'Black Rhino',
+    size: '17x8',
+    bolt: '5x114.3',
+    offset: '+32mm',
+    weight: '24.5 lbs',
+    price: 455,
+    spokeCount: 6,
+    spokeWidth: 0.055,
+    spokeDepth: 0.04,
+    lipDepth: 0.045,
+    hubRadius: 0.05,
+    finishes: [
+      { name: 'Gun Black / Matte Black Ring', color: 0x2a2a2a, accent: 0x111111, metalness: 0.8, roughness: 0.35 },
+      { name: 'Matte Bronze / Matte Black Ring', color: 0x8b6914, accent: 0x111111, metalness: 0.7, roughness: 0.45 },
+    ],
+    currentFinish: 0,
+  },
+  {
+    id: 'venom',
+    name: 'Venom',
+    brand: 'Black Rhino',
+    size: '18x8.5',
+    bolt: '5x114.3',
+    offset: '+30mm',
+    weight: '26.2 lbs',
+    price: 389,
+    spokeCount: 5,
+    spokeWidth: 0.04,
+    spokeDepth: 0.035,
+    lipDepth: 0.05,
+    hubRadius: 0.045,
+    finishes: [
+      { name: 'Gloss Black', color: 0x0a0a0a, accent: 0x0a0a0a, metalness: 0.9, roughness: 0.15 },
+      { name: 'Silver w/ Mirror Lip', color: 0x999999, accent: 0xcccccc, metalness: 0.95, roughness: 0.1 },
+    ],
+    currentFinish: 0,
+  },
+  {
+    id: 'chamber',
+    name: 'Chamber',
+    brand: 'Black Rhino',
+    size: '17x9',
+    bolt: '5x114.3',
+    offset: '+35mm',
+    weight: '27.8 lbs',
+    price: 425,
+    spokeCount: 10,
+    spokeWidth: 0.025,
+    spokeDepth: 0.03,
+    lipDepth: 0.04,
+    hubRadius: 0.04,
+    finishes: [
+      { name: 'Machined Silver', color: 0xaaaaaa, accent: 0x888888, metalness: 0.95, roughness: 0.15 },
+      { name: 'Matte Black', color: 0x1a1a1a, accent: 0x222222, metalness: 0.7, roughness: 0.5 },
+    ],
+    currentFinish: 0,
+  },
+  {
+    id: 'raze',
+    name: 'Raze',
+    brand: 'Black Rhino',
+    size: '17x8',
+    bolt: '5x114.3',
+    offset: '+38mm',
+    weight: '25.1 lbs',
+    price: 349,
+    spokeCount: 7,
+    spokeWidth: 0.035,
+    spokeDepth: 0.035,
+    lipDepth: 0.035,
+    hubRadius: 0.042,
+    finishes: [
+      { name: 'Matte Bronze', color: 0x8b6914, accent: 0x705510, metalness: 0.7, roughness: 0.45 },
+      { name: 'Satin Black', color: 0x1a1a1a, accent: 0x252525, metalness: 0.6, roughness: 0.55 },
+    ],
+    currentFinish: 0,
+  },
+  {
+    id: 'fury',
+    name: 'Fury',
+    brand: 'Black Rhino',
+    size: '18x9',
+    bolt: '5x114.3',
+    offset: '+25mm',
+    weight: '28.4 lbs',
+    price: 479,
+    spokeCount: 6,
+    spokeWidth: 0.048,
+    spokeDepth: 0.05,
+    lipDepth: 0.06,
+    hubRadius: 0.05,
+    finishes: [
+      { name: 'Gloss Gunmetal / Black Lip', color: 0x3a3a3a, accent: 0x0a0a0a, metalness: 0.85, roughness: 0.2 },
+      { name: 'Candy Red / Black Lip', color: 0x8b1a1a, accent: 0x0a0a0a, metalness: 0.8, roughness: 0.25 },
+    ],
+    currentFinish: 0,
+  },
+];
+
+// Wheel positions on the car [x, y, z, facesRight]
+const WHEEL_POSITIONS = [
+  [1.35, 0.33, 0.80, true],   // front-right
+  [1.35, 0.33, -0.80, false],  // front-left
+  [-1.35, 0.33, 0.80, true],  // rear-right
+  [-1.35, 0.33, -0.80, false], // rear-left
+];
+
+// Car paint colors
+const CAR_COLORS = [
+  { name: 'Midnight Black', color: 0x0f0f12, metalness: 0.9, roughness: 0.25 },
+  { name: 'Arctic White', color: 0xe8e8e8, metalness: 0.7, roughness: 0.3 },
+  { name: 'Storm Grey', color: 0x3a3a42, metalness: 0.85, roughness: 0.28 },
+  { name: 'Deep Navy', color: 0x151530, metalness: 0.85, roughness: 0.28 },
+  { name: 'Crimson', color: 0x4a0a0a, metalness: 0.8, roughness: 0.3 },
+];
+
+// ============================================================
+//  STATE
+// ============================================================
+let scene, camera, renderer, controls;
+let carGroup, wheelGroups = [];
+let currentWheelIndex = 0;
+let currentCarColor = 0;
+let autoRotate = true;
+let carBodyMaterial;
+let envMap;
+
+// ============================================================
+//  INIT
+// ============================================================
+function init() {
+  // Always init UI first so it renders even if WebGL fails
+  initUI();
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  // Scene
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0a0a0f, 0.04);
+
+  // Background gradient
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.width = 2; bgCanvas.height = 512;
+  const bgCtx = bgCanvas.getContext('2d');
+  const grad = bgCtx.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, '#12121a');
+  grad.addColorStop(0.5, '#0e0e16');
+  grad.addColorStop(1, '#0a0a10');
+  bgCtx.fillStyle = grad;
+  bgCtx.fillRect(0, 0, 2, 512);
+  const bgTex = new THREE.CanvasTexture(bgCanvas);
+  bgTex.colorSpace = THREE.SRGBColorSpace;
+  scene.background = bgTex;
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(4.5, 2.2, 5);
+
+  // Controls
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0.45, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.enablePan = false;
+  controls.minDistance = 3;
+  controls.maxDistance = 12;
+  controls.minPolarAngle = 0.3;
+  controls.maxPolarAngle = Math.PI / 2 - 0.05;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.8;
+  controls.update();
+
+  // Hide controls hint after first interaction
+  const hint = document.getElementById('controls-hint');
+  const hideHint = () => { hint.classList.add('hidden'); renderer.domElement.removeEventListener('pointerdown', hideHint); };
+  renderer.domElement.addEventListener('pointerdown', hideHint);
+
+  initLighting();
+  createEnvironmentMap();
+  createGround();
+  createCar();
+  createWheelsOnCar(WHEEL_CATALOG[0]);
+
+  window.addEventListener('resize', onResize);
+  animate();
+
+  // Hide loading
+  setTimeout(() => document.getElementById('loading').classList.add('done'), 600);
+}
+
+// ============================================================
+//  LIGHTING
+// ============================================================
+function initLighting() {
+  // Key light
+  const keyLight = new THREE.DirectionalLight(0xffeedd, 3);
+  keyLight.position.set(5, 8, 4);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048, 2048);
+  keyLight.shadow.camera.near = 1;
+  keyLight.shadow.camera.far = 25;
+  keyLight.shadow.camera.left = -6;
+  keyLight.shadow.camera.right = 6;
+  keyLight.shadow.camera.top = 4;
+  keyLight.shadow.camera.bottom = -4;
+  keyLight.shadow.bias = -0.001;
+  keyLight.shadow.normalBias = 0.02;
+  scene.add(keyLight);
+
+  // Fill light
+  const fillLight = new THREE.DirectionalLight(0x8899bb, 1.2);
+  fillLight.position.set(-4, 4, -3);
+  scene.add(fillLight);
+
+  // Rim light
+  const rimLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  rimLight.position.set(0, 2, -6);
+  scene.add(rimLight);
+
+  // Hemisphere
+  const hemi = new THREE.HemisphereLight(0x445566, 0x111122, 0.6);
+  scene.add(hemi);
+
+  // Accent spots on ground
+  const spot1 = new THREE.SpotLight(0xc8a84e, 8, 10, 0.6, 0.8, 2);
+  spot1.position.set(3, 4, 0);
+  spot1.target.position.set(0, 0, 0);
+  scene.add(spot1);
+  scene.add(spot1.target);
+}
+
+// ============================================================
+//  ENVIRONMENT MAP (for reflections)
+// ============================================================
+function createEnvironmentMap() {
+  // Create a simple studio environment for reflections
+  const envScene = new THREE.Scene();
+
+  // Warm overhead panel
+  const panelGeo = new THREE.PlaneGeometry(10, 10);
+  const panelMat = new THREE.MeshBasicMaterial({ color: 0xffeedd, side: THREE.DoubleSide });
+  const panel = new THREE.Mesh(panelGeo, panelMat);
+  panel.position.set(0, 5, 0);
+  panel.rotation.x = Math.PI / 2;
+  envScene.add(panel);
+
+  // Side panels
+  const sideMat = new THREE.MeshBasicMaterial({ color: 0x334455, side: THREE.DoubleSide });
+  const side1 = new THREE.Mesh(panelGeo, sideMat);
+  side1.position.set(-5, 2.5, 0);
+  side1.rotation.y = Math.PI / 2;
+  envScene.add(side1);
+
+  const side2 = new THREE.Mesh(panelGeo, sideMat.clone());
+  side2.material.color.setHex(0x223344);
+  side2.position.set(5, 2.5, 0);
+  side2.rotation.y = -Math.PI / 2;
+  envScene.add(side2);
+
+  // Floor (dark)
+  const floorMat = new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.DoubleSide });
+  const floor = new THREE.Mesh(panelGeo, floorMat);
+  floor.position.set(0, -0.1, 0);
+  floor.rotation.x = -Math.PI / 2;
+  envScene.add(floor);
+
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileCubemapShader();
+  envMap = pmremGenerator.fromScene(envScene, 0.04).texture;
+  scene.environment = envMap;
+  pmremGenerator.dispose();
+}
+
+// ============================================================
+//  GROUND
+// ============================================================
+function createGround() {
+  // Main ground plane
+  const groundGeo = new THREE.CircleGeometry(20, 64);
+  const groundMat = new THREE.MeshStandardMaterial({
+    color: 0x0c0c10,
+    metalness: 0.4,
+    roughness: 0.6,
+  });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Turntable ring (subtle)
+  const ringGeo = new THREE.RingGeometry(2.8, 3.0, 64);
+  const ringMat = new THREE.MeshStandardMaterial({
+    color: 0xc8a84e,
+    metalness: 0.8,
+    roughness: 0.3,
+    transparent: true,
+    opacity: 0.15,
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.002;
+  scene.add(ring);
+}
+
+// ============================================================
+//  CAR BODY
+// ============================================================
+function createCar() {
+  carGroup = new THREE.Group();
+
+  // Material
+  const cc = CAR_COLORS[currentCarColor];
+  carBodyMaterial = new THREE.MeshPhysicalMaterial({
+    color: cc.color,
+    metalness: cc.metalness,
+    roughness: cc.roughness,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.1,
+    envMapIntensity: 1.2,
+  });
+
+  // --- LOWER BODY ---
+  // Side profile shape (XY plane, X = car length, Y = height)
+  const bodyProfile = new THREE.Shape();
+  bodyProfile.moveTo(-2.25, 0.18);
+
+  // Front bumper
+  bodyProfile.lineTo(-2.25, 0.32);
+  bodyProfile.quadraticCurveTo(-2.25, 0.48, -2.10, 0.48);
+
+  // Hood (gentle upward slope)
+  bodyProfile.lineTo(-0.95, 0.56);
+
+  // Belt line (straight through to rear)
+  bodyProfile.lineTo(1.05, 0.56);
+
+  // Trunk rear edge
+  bodyProfile.lineTo(1.85, 0.52);
+
+  // Rear bumper
+  bodyProfile.quadraticCurveTo(2.20, 0.48, 2.25, 0.35);
+  bodyProfile.lineTo(2.25, 0.18);
+
+  // Bottom
+  bodyProfile.lineTo(-2.25, 0.18);
+
+  const bodyGeo = new THREE.ExtrudeGeometry(bodyProfile, {
+    depth: 1.65,
+    bevelEnabled: true,
+    bevelThickness: 0.04,
+    bevelSize: 0.04,
+    bevelSegments: 4,
+  });
+  bodyGeo.translate(0, 0, -0.825);
+  bodyGeo.computeVertexNormals();
+
+  const body = new THREE.Mesh(bodyGeo, carBodyMaterial);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  carGroup.add(body);
+
+  // --- CABIN ---
+  const cabinProfile = new THREE.Shape();
+  // Windshield base
+  cabinProfile.moveTo(-0.85, 0.56);
+  // Windshield
+  cabinProfile.lineTo(-0.45, 0.92);
+  // Roof
+  cabinProfile.quadraticCurveTo(-0.2, 0.96, 0.35, 0.96);
+  // Rear window
+  cabinProfile.quadraticCurveTo(0.55, 0.95, 0.8, 0.62);
+  // Trunk line
+  cabinProfile.lineTo(0.8, 0.56);
+  // Close
+  cabinProfile.lineTo(-0.85, 0.56);
+
+  const cabinGeo = new THREE.ExtrudeGeometry(cabinProfile, {
+    depth: 1.52,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.03,
+    bevelSegments: 3,
+  });
+  cabinGeo.translate(0, 0, -0.76);
+  cabinGeo.computeVertexNormals();
+
+  const cabin = new THREE.Mesh(cabinGeo, carBodyMaterial);
+  cabin.castShadow = true;
+  carGroup.add(cabin);
+
+  // --- WINDOWS ---
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x112233,
+    metalness: 0.1,
+    roughness: 0.05,
+    transparent: true,
+    opacity: 0.6,
+    transmission: 0.5,
+    envMapIntensity: 2.0,
+  });
+
+  // Side windows (left and right)
+  for (const side of [-1, 1]) {
+    const z = side * 0.79;
+
+    // Windshield side
+    const wsGeo = createWindowGeo(
+      -0.83, 0.58,
+      -0.47, 0.90,
+      -0.45, 0.90,
+      -0.45, 0.58
+    );
+    const ws = new THREE.Mesh(wsGeo, glassMat);
+    ws.position.z = z;
+    carGroup.add(ws);
+
+    // Front side window
+    const fwGeo = createWindowGeo(
+      -0.43, 0.58,
+      -0.43, 0.90,
+      0.05, 0.94,
+      0.05, 0.58
+    );
+    const fw = new THREE.Mesh(fwGeo, glassMat);
+    fw.position.z = z;
+    carGroup.add(fw);
+
+    // Rear side window
+    const rwGeo = createWindowGeo(
+      0.08, 0.58,
+      0.08, 0.94,
+      0.55, 0.85,
+      0.55, 0.58
+    );
+    const rw = new THREE.Mesh(rwGeo, glassMat);
+    rw.position.z = z;
+    carGroup.add(rw);
+
+    // Rear quarter window
+    const rqGeo = createWindowGeo(
+      0.58, 0.58,
+      0.58, 0.82,
+      0.76, 0.65,
+      0.76, 0.58
+    );
+    const rq = new THREE.Mesh(rqGeo, glassMat);
+    rq.position.z = z;
+    carGroup.add(rq);
+  }
+
+  // Front windshield
+  const fwsGeo = new THREE.PlaneGeometry(1.52, 0.44);
+  const fws = new THREE.Mesh(fwsGeo, glassMat);
+  fws.position.set(-0.65, 0.76, 0);
+  fws.rotation.y = 0;
+  fws.rotation.x = 0;
+  fws.rotation.z = 0;
+  // Angle the windshield
+  fws.lookAt(-0.65 + 0.38, 0.76 + 0.36, 0);
+  carGroup.add(fws);
+
+  // Rear windshield
+  const rwsGeo = new THREE.PlaneGeometry(1.46, 0.38);
+  const rws = new THREE.Mesh(rwsGeo, glassMat);
+  rws.position.set(0.67, 0.75, 0);
+  rws.lookAt(0.67 - 0.3, 0.75 + 0.3, 0);
+  carGroup.add(rws);
+
+  // --- WHEEL WELLS ---
+  const wellMat = new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 0.9, metalness: 0.0 });
+  WHEEL_POSITIONS.forEach(([x, y, z, facesRight]) => {
+    const wellGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.18, 32, 1, true, 0, Math.PI);
+    const well = new THREE.Mesh(wellGeo, wellMat);
+    well.position.set(x, y, z);
+    well.rotation.x = Math.PI / 2;
+    if (facesRight) {
+      well.rotation.z = Math.PI;
+    }
+    carGroup.add(well);
+  });
+
+  // --- HEADLIGHTS ---
+  const headlightMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xffeedd,
+    emissiveIntensity: 0.5,
+    roughness: 0.1,
+    metalness: 0.8,
+  });
+
+  for (const z of [-0.55, 0.55]) {
+    const hlGeo = new THREE.BoxGeometry(0.04, 0.08, 0.28);
+    const hl = new THREE.Mesh(hlGeo, headlightMat);
+    hl.position.set(-2.22, 0.4, z);
+    carGroup.add(hl);
+  }
+
+  // --- TAILLIGHTS ---
+  const taillightMat = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    emissive: 0xff2200,
+    emissiveIntensity: 0.4,
+    roughness: 0.2,
+    metalness: 0.5,
+  });
+
+  for (const z of [-0.55, 0.55]) {
+    const tlGeo = new THREE.BoxGeometry(0.04, 0.10, 0.32);
+    const tl = new THREE.Mesh(tlGeo, taillightMat);
+    tl.position.set(2.22, 0.42, z);
+    carGroup.add(tl);
+  }
+
+  // --- GRILLE ---
+  const grilleMat = new THREE.MeshStandardMaterial({
+    color: 0x080808,
+    roughness: 0.9,
+    metalness: 0.3,
+  });
+  const grilleGeo = new THREE.PlaneGeometry(0.38, 1.0);
+  const grille = new THREE.Mesh(grilleGeo, grilleMat);
+  grille.position.set(-2.27, 0.38, 0);
+  grille.rotation.y = Math.PI / 2;
+  carGroup.add(grille);
+
+  // --- LOWER TRIM ---
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.8, metalness: 0.2 });
+  const trimGeo = new THREE.BoxGeometry(4.4, 0.06, 1.72);
+  const trim = new THREE.Mesh(trimGeo, trimMat);
+  trim.position.set(0, 0.19, 0);
+  carGroup.add(trim);
+
+  scene.add(carGroup);
+}
+
+function createWindowGeo(x1, y1, x2, y2, x3, y3, x4, y4) {
+  const geo = new THREE.BufferGeometry();
+  const vertices = new Float32Array([
+    x1, y1, 0,
+    x2, y2, 0,
+    x3, y3, 0,
+    x1, y1, 0,
+    x3, y3, 0,
+    x4, y4, 0,
+  ]);
+  geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// ============================================================
+//  WHEELS
+// ============================================================
+function createWheel(wheelData, finishIndex) {
+  const group = new THREE.Group();
+  const finish = wheelData.finishes[finishIndex ?? wheelData.currentFinish];
+
+  // --- TIRE ---
+  const tireGeo = new THREE.TorusGeometry(0.27, 0.065, 20, 64);
+  const tireMat = new THREE.MeshStandardMaterial({
+    color: 0x181818,
+    roughness: 0.92,
+    metalness: 0.05,
+  });
+  const tire = new THREE.Mesh(tireGeo, tireMat);
+  tire.castShadow = true;
+  group.add(tire);
+
+  // --- RIM BARREL (outer ring) ---
+  const barrelGeo = new THREE.TorusGeometry(0.22, 0.02, 12, 64);
+  const rimMat = new THREE.MeshPhysicalMaterial({
+    color: finish.accent,
+    metalness: finish.metalness,
+    roughness: finish.roughness,
+    envMapIntensity: 1.5,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.2,
+  });
+  const barrel = new THREE.Mesh(barrelGeo, rimMat);
+  group.add(barrel);
+
+  // --- RIM LIP ---
+  const lipGeo = new THREE.TorusGeometry(0.215, 0.012, 8, 64);
+  const lipMat = new THREE.MeshPhysicalMaterial({
+    color: finish.accent,
+    metalness: 0.95,
+    roughness: 0.1,
+    envMapIntensity: 2.0,
+  });
+  const lip = new THREE.Mesh(lipGeo, lipMat);
+  lip.position.z = wheelData.lipDepth;
+  group.add(lip);
+
+  // --- FACE DISC (backing behind spokes) ---
+  const faceGeo = new THREE.CircleGeometry(0.20, 64);
+  const faceMat = new THREE.MeshStandardMaterial({
+    color: finish.color,
+    metalness: finish.metalness * 0.8,
+    roughness: finish.roughness + 0.1,
+    side: THREE.DoubleSide,
+  });
+  const face = new THREE.Mesh(faceGeo, faceMat);
+  face.position.z = 0.005;
+  group.add(face);
+
+  // --- SPOKES ---
+  const spokeMat = new THREE.MeshPhysicalMaterial({
+    color: finish.color,
+    metalness: finish.metalness,
+    roughness: finish.roughness,
+    envMapIntensity: 1.5,
+    clearcoat: 0.2,
+    clearcoatRoughness: 0.3,
+  });
+
+  const spokeLength = 0.17;
+  for (let i = 0; i < wheelData.spokeCount; i++) {
+    const angle = (i / wheelData.spokeCount) * Math.PI * 2;
+
+    const spokeGeo = new THREE.BoxGeometry(spokeLength, wheelData.spokeWidth, wheelData.spokeDepth);
+    spokeGeo.translate(spokeLength / 2 + wheelData.hubRadius, 0, wheelData.spokeDepth / 2 + 0.005);
+
+    const spoke = new THREE.Mesh(spokeGeo, spokeMat);
+    spoke.rotation.z = angle;
+    spoke.castShadow = true;
+    group.add(spoke);
+  }
+
+  // --- HUB ---
+  const hubGeo = new THREE.CylinderGeometry(wheelData.hubRadius, wheelData.hubRadius, wheelData.spokeDepth + 0.01, 32);
+  hubGeo.rotateX(Math.PI / 2);
+  hubGeo.translate(0, 0, wheelData.spokeDepth / 2 + 0.005);
+  const hub = new THREE.Mesh(hubGeo, spokeMat);
+  group.add(hub);
+
+  // --- CENTER CAP ---
+  const capGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.015, 24);
+  capGeo.rotateX(Math.PI / 2);
+  capGeo.translate(0, 0, wheelData.spokeDepth + 0.015);
+  const capMat = new THREE.MeshPhysicalMaterial({
+    color: 0x222222,
+    metalness: 0.9,
+    roughness: 0.15,
+    envMapIntensity: 1.5,
+  });
+  const cap = new THREE.Mesh(capGeo, capMat);
+  group.add(cap);
+
+  // --- LUG NUTS ---
+  const lugMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.9, roughness: 0.2 });
+  for (let i = 0; i < 5; i++) {
+    const lugAngle = (i / 5) * Math.PI * 2;
+    const lugR = 0.035;
+    const lugGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.012, 6);
+    lugGeo.rotateX(Math.PI / 2);
+    const lug = new THREE.Mesh(lugGeo, lugMat);
+    lug.position.set(
+      Math.cos(lugAngle) * lugR,
+      Math.sin(lugAngle) * lugR,
+      wheelData.spokeDepth + 0.018
+    );
+    group.add(lug);
+  }
+
+  // --- BRAKE DISC (visible through spokes) ---
+  const brakeGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.012, 48);
+  brakeGeo.rotateX(Math.PI / 2);
+  const brakeMat = new THREE.MeshStandardMaterial({
+    color: 0x555555,
+    metalness: 0.8,
+    roughness: 0.35,
+  });
+  const brake = new THREE.Mesh(brakeGeo, brakeMat);
+  brake.position.z = -0.015;
+  group.add(brake);
+
+  return group;
+}
+
+function createWheelsOnCar(wheelData) {
+  // Remove old wheels
+  wheelGroups.forEach(w => {
+    carGroup.remove(w);
+    w.traverse(obj => { if (obj.geometry) obj.geometry.dispose(); });
+  });
+  wheelGroups = [];
+
+  WHEEL_POSITIONS.forEach(([x, y, z, facesRight]) => {
+    const wheel = createWheel(wheelData);
+
+    // Orient: default wheel face is in XY plane facing +Z
+    // We need it facing outward from the car
+    if (facesRight) {
+      // Face points +Z (already correct)
+    } else {
+      // Face points -Z
+      wheel.rotation.y = Math.PI;
+    }
+
+    wheel.position.set(x, y, z);
+    carGroup.add(wheel);
+    wheelGroups.push(wheel);
+  });
+}
+
+function swapWheels(index, finishIndex) {
+  const wheelData = WHEEL_CATALOG[index];
+  if (finishIndex !== undefined) wheelData.currentFinish = finishIndex;
+
+  // Animate out
+  wheelGroups.forEach(w => {
+    animateScale(w, 0.01, 200, () => {
+      carGroup.remove(w);
+      w.traverse(obj => { if (obj.geometry) obj.geometry.dispose(); });
+    });
+  });
+  wheelGroups = [];
+
+  // Animate in after short delay
+  setTimeout(() => {
+    WHEEL_POSITIONS.forEach(([x, y, z, facesRight]) => {
+      const wheel = createWheel(wheelData);
+      if (!facesRight) wheel.rotation.y = Math.PI;
+      wheel.position.set(x, y, z);
+      wheel.scale.setScalar(0.01);
+      carGroup.add(wheel);
+      wheelGroups.push(wheel);
+      animateScale(wheel, 1.0, 350);
+    });
+  }, 220);
+}
+
+function animateScale(obj, target, duration, onComplete) {
+  const start = obj.scale.x;
+  const startTime = performance.now();
+  function update() {
+    const elapsed = performance.now() - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    const s = start + (target - start) * ease;
+    obj.scale.setScalar(Math.max(s, 0.001));
+    if (t < 1) {
+      requestAnimationFrame(update);
+    } else if (onComplete) {
+      onComplete();
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+// ============================================================
+//  UI
+// ============================================================
+function initUI() {
+  // Wheel cards
+  const container = document.getElementById('wheel-cards');
+  WHEEL_CATALOG.forEach((w, i) => {
+    const card = document.createElement('div');
+    card.className = 'wheel-card' + (i === 0 ? ' active' : '');
+    card.dataset.index = i;
+    card.innerHTML = `
+      <div class="card-icon">${createWheelSVG(w)}</div>
+      <div class="card-name">${w.name}</div>
+      <div class="card-brand">${w.brand}</div>
+    `;
+    card.addEventListener('click', () => selectWheel(i));
+    container.appendChild(card);
+  });
+
+  // Car color dots
+  const colorContainer = document.getElementById('color-selector');
+  CAR_COLORS.forEach((c, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'color-dot' + (i === 0 ? ' active' : '');
+    dot.style.background = '#' + c.color.toString(16).padStart(6, '0');
+    dot.title = c.name;
+    dot.addEventListener('click', () => selectCarColor(i));
+    colorContainer.appendChild(dot);
+  });
+
+  // Finish dots
+  updateFinishDots(0);
+  updateInfoPanel(0);
+}
+
+function createWheelSVG(wheelData) {
+  const n = wheelData.spokeCount;
+  let spokes = '';
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * 360;
+    const sw = Math.max(wheelData.spokeWidth * 400, 3);
+    spokes += `<line x1="14" y1="0" x2="28" y2="0"
+      transform="rotate(${angle} 0 0)"
+      stroke="#888" stroke-width="${sw}" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="-32 -32 64 64" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="0" cy="0" r="30" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="0" cy="0" r="26" fill="none" stroke="#444" stroke-width="1"/>
+    ${spokes}
+    <circle cx="0" cy="0" r="6" fill="#555"/>
+    <circle cx="0" cy="0" r="3" fill="#333"/>
+  </svg>`;
+}
+
+function selectWheel(index) {
+  if (index === currentWheelIndex) return;
+  currentWheelIndex = index;
+
+  // Update card styles
+  document.querySelectorAll('.wheel-card').forEach((card, i) => {
+    card.classList.toggle('active', i === index);
+  });
+
+  swapWheels(index);
+  updateInfoPanel(index);
+  updateFinishDots(index);
+}
+
+function updateInfoPanel(index) {
+  const w = WHEEL_CATALOG[index];
+  document.getElementById('info-brand').textContent = w.brand.toUpperCase();
+  document.getElementById('info-name').textContent = w.name;
+  document.getElementById('info-size').textContent = w.size;
+  document.getElementById('info-bolt').textContent = w.bolt;
+  document.getElementById('info-offset').textContent = w.offset;
+  document.getElementById('info-weight').textContent = w.weight;
+  document.getElementById('info-price').textContent = w.price;
+  document.getElementById('finish-name').textContent = w.finishes[w.currentFinish].name;
+}
+
+function updateFinishDots(index) {
+  const w = WHEEL_CATALOG[index];
+  const container = document.getElementById('finish-selector');
+  container.innerHTML = '';
+  w.finishes.forEach((f, fi) => {
+    const dot = document.createElement('div');
+    dot.className = 'finish-dot' + (fi === w.currentFinish ? ' active' : '');
+    dot.style.background = '#' + f.color.toString(16).padStart(6, '0');
+    dot.title = f.name;
+    dot.addEventListener('click', () => selectFinish(fi));
+    container.appendChild(dot);
+  });
+}
+
+function selectFinish(finishIndex) {
+  const w = WHEEL_CATALOG[currentWheelIndex];
+  if (finishIndex === w.currentFinish) return;
+  w.currentFinish = finishIndex;
+  swapWheels(currentWheelIndex, finishIndex);
+  updateFinishDots(currentWheelIndex);
+  updateInfoPanel(currentWheelIndex);
+}
+
+function selectCarColor(index) {
+  if (index === currentCarColor) return;
+  currentCarColor = index;
+  const cc = CAR_COLORS[index];
+  carBodyMaterial.color.setHex(cc.color);
+  carBodyMaterial.metalness = cc.metalness;
+  carBodyMaterial.roughness = cc.roughness;
+
+  document.querySelectorAll('.color-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === index);
+  });
+}
+
+window.toggleAutoRotate = function() {
+  autoRotate = !autoRotate;
+  controls.autoRotate = autoRotate;
+  document.getElementById('auto-rotate').classList.toggle('active', autoRotate);
+};
+
+// ============================================================
+//  ANIMATION
+// ============================================================
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Gentle wheel spin
+  wheelGroups.forEach(w => {
+    // Rotate the tire around its axle - spokes and tire spin
+    // The wheel group is in XY plane, Z is the axle
+    // For a parked car visual, we skip spin
+    // But a very slow spin looks cool for the showroom
+  });
+
+  renderer.render(scene, camera);
+}
+
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// ============================================================
+//  GO
+// ============================================================
+try {
+  init();
+} catch (e) {
+  console.error('WebGL init failed:', e);
+  document.getElementById('loading').classList.add('done');
+  // Show a fallback message
+  const container = document.getElementById('canvas-container');
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#666;text-align:center;padding:40px;">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#c8a84e" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+      </svg>
+      <p style="margin:16px 0 8px;font-size:18px;color:#ccc;">WebGL Required</p>
+      <p style="font-size:13px;max-width:400px;">This 3D visualizer requires WebGL support. Please open this page in a modern browser with hardware acceleration enabled.</p>
+    </div>`;
+  // Still init UI so the wheel selector works
+  initUI();
+}
+</script>
+
+</body>
+</html>
